@@ -577,7 +577,7 @@ app.use((_req: Request, res: Response) => {
 });
 
 // ─── Server Startup ─────────────────────────────────────────────────────────
-export async function startServer(port: number = Number(PORT), host: string = '127.0.0.1'): Promise<any> {
+export async function startServer(port: number = Number(PORT), host: string = process.env.HOST || '0.0.0.0'): Promise<any> {
   await runMigrations();
   startCronJob();
 

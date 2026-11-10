@@ -1,7 +1,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import app, { startServer } from '../src/server.js';
-import { runDailyReminderJob } from '../src/reminders.js';
+import { runDailyReminderJob, stopCronJob } from '../src/reminders.js';
 import { db } from '../src/db.js';
 import { REVIEWER_RAW_TOKEN, seedReviewer } from '../src/seeds/reviewer.js';
 import { seedDemo } from '../src/seeds/demo.js';
@@ -19,6 +19,7 @@ before(async () => {
 });
 
 after(async () => {
+  stopCronJob();
   if (server) {
     server.close();
   }

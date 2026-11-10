@@ -99,10 +99,13 @@ export async function runDailyReminderJob(): Promise<{ flippedCount: number; dra
   return { flippedCount, draftsCreated };
 }
 
+let scheduledTask: any = null;
+
 // Start daily cron at 09:00 IST (03:30 UTC)
-export function startCronJob(): void {
+export function startCronJob(): any {
+  if (scheduledTask) return scheduledTask;
   // '30 3 * * *' = 03:30 UTC = 09:00 IST
-  cron.schedule('30 3 * * *', async () => {
+  scheduledTask = cron.schedule('30 3 * * *', async () => {
     console.log('[Cron] Running daily overdue check & reminder drafts...');
     try {
       const stats = await runDailyReminderJob();
@@ -111,5 +114,14 @@ export function startCronJob(): void {
       console.error('[Cron] Error running reminder job:', err);
     }
   });
+  return scheduledTask;
 }
+
+export function stopCronJob(): void {
+  if (scheduledTask) {
+    scheduledTask.stop();
+    scheduledTask = null;
+  }
+}
+
 
