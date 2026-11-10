@@ -4,7 +4,9 @@ import express, { type Request, type Response, type NextFunction } from 'express
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import { runMigrations, db } from './db.js';
+import { runMigrations, db, isLivePostgres } from './db.js';
+import { seedReviewer } from './seeds/reviewer.js';
+import { seedDemo } from './seeds/demo.js';
 import {
   hashPassword,
   verifyPassword,
@@ -579,6 +581,14 @@ app.use((_req: Request, res: Response) => {
 // ─── Server Startup ─────────────────────────────────────────────────────────
 export async function startServer(port: number = Number(PORT), host: string = process.env.HOST || '0.0.0.0'): Promise<any> {
   await runMigrations();
+  if (!isLivePostgres) {
+    try {
+      await seedReviewer();
+      await seedDemo();
+    } catch (err) {
+      console.warn('Auto-seed in-memory notice:', err);
+    }
+  }
   startCronJob();
 
   return new Promise((resolve) => {

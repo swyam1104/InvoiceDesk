@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const databaseUrl = process.env.DATABASE_URL;
-const isLivePostgres = Boolean(databaseUrl && (databaseUrl.startsWith('postgres://') || databaseUrl.startsWith('postgresql://')));
+export const isLivePostgres = Boolean(databaseUrl && (databaseUrl.startsWith('postgres://') || databaseUrl.startsWith('postgresql://')));
 
 export interface DbClient {
   query<T = any>(sql: string, params?: any[]): Promise<T[]>;
