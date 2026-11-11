@@ -1,5 +1,12 @@
 import { layout, badge, escHtml } from './layout.js';
 
+function formatDate(d: any): string {
+  if (!d) return '—';
+  if (d instanceof Date) return d.toISOString().split('T')[0]!;
+  if (typeof d === 'string') return d.split('T')[0]!;
+  return String(d);
+}
+
 export interface UserSessionView {
   id: number;
   email: string;
@@ -94,20 +101,21 @@ export function invoicesView(opts: {
         ` : `
           <div style="padding: 16px 24px;">
             ${overdueList.map(inv => {
-              const daysOverdue = Math.floor((Date.now() - new Date(inv.due_date).getTime()) / (1000 * 60 * 60 * 24));
+              const daysOverdue = Math.max(1, Math.floor((Date.now() - new Date(inv.due_date).getTime()) / (1000 * 60 * 60 * 24)));
               const amount = (inv.total_paise / 100).toFixed(2);
               const invoiceLink = `${host}/i/${inv.public_id}`;
-              const defaultMsg = `Hi ${inv.client_name}, a gentle reminder that invoice ${user.invoice_prefix}/${inv.fy_label}/${inv.seq_number} for ₹${amount} was due on ${inv.due_date} (${daysOverdue} days ago). You can view and pay here: ${invoiceLink}. Thank you!`;
+              const invoiceNum = inv.number || (inv.fy ? `${user.invoice_prefix}/${inv.fy}/${String(inv.seq).padStart(3, '0')}` : `${user.invoice_prefix}/${inv.id}`);
+              const defaultMsg = `Hi ${inv.client_name}, a gentle reminder that invoice ${invoiceNum} for ₹${amount} was due on ${formatDate(inv.due_date)} (${daysOverdue} days ago). You can view and pay here: ${invoiceLink}. Thank you!`;
               const msg = inv.reminder_message ?? defaultMsg;
               const waUrl = inv.client_phone ? `https://wa.me/${inv.client_phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(msg)}` : null;
-              const mailto = inv.client_email ? `mailto:${inv.client_email}?subject=${encodeURIComponent('Payment Reminder: Invoice ' + user.invoice_prefix + '/' + inv.fy_label + '/' + inv.seq_number)}&body=${encodeURIComponent(msg)}` : null;
+              const mailto = inv.client_email ? `mailto:${inv.client_email}?subject=${encodeURIComponent('Payment Reminder: Invoice ' + invoiceNum)}&body=${encodeURIComponent(msg)}` : null;
 
               return `
                 <div style="border: 1px solid var(--border); border-radius: 6px; padding: 16px; margin-bottom: 16px;">
                   <div class="flex items-center justify-between mb-4">
                     <div>
                       <strong>${escHtml(inv.client_name)}</strong> &bull;
-                      <span class="font-mono text-muted">${user.invoice_prefix}/${inv.fy_label}/${inv.seq_number}</span>
+                      <span class="font-mono text-muted">${escHtml(invoiceNum)}</span>
                       <span class="badge badge-overdue" style="margin-left: 8px;">${daysOverdue}d overdue</span>
                     </div>
                     <div style="font-weight: 700; color: var(--danger);">₹${amount}</div>
@@ -154,14 +162,16 @@ export function invoicesView(opts: {
               </tr>
             </thead>
             <tbody>
-              ${invoices.map(inv => `
+              ${invoices.map(inv => {
+                const invoiceNum = inv.number || (inv.fy ? `${user.invoice_prefix}/${inv.fy}/${String(inv.seq).padStart(3, '0')}` : `${user.invoice_prefix}/${inv.id}`);
+                return `
                 <tr>
                   <td class="font-mono">
-                    <a href="/invoices/${inv.id}">${user.invoice_prefix}/${inv.fy_label}/${inv.seq_number}</a>
+                    <a href="/invoices/${inv.id}">${escHtml(invoiceNum)}</a>
                   </td>
                   <td>${escHtml(inv.client_name ?? '—')}</td>
-                  <td class="text-muted">${inv.issue_date}</td>
-                  <td class="text-muted">${inv.due_date ?? '—'}</td>
+                  <td class="text-muted">${formatDate(inv.issue_date)}</td>
+                  <td class="text-muted">${formatDate(inv.due_date)}</td>
                   <td style="font-weight: 600;">₹${((inv.total_paise ?? 0) / 100).toFixed(2)}</td>
                   <td>${badge(inv.status, inv.due_date)}</td>
                   <td class="text-muted" style="font-size: 12px;">${inv.created_via === 'claude' ? '🤖 Claude' : 'Web'}</td>
@@ -170,7 +180,8 @@ export function invoicesView(opts: {
                     <a href="/invoices/${inv.id}" class="btn btn-secondary btn-sm">Edit</a>
                   </td>
                 </tr>
-              `).join('')}
+              `;
+              }).join('')}
             </tbody>
           </table>
         `}

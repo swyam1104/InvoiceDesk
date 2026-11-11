@@ -648,14 +648,24 @@ export class InvoiceService {
     let paidMonthPaise = 0;
 
     for (const row of rows) {
-      const amount = Number(row.total_paise);
-      if (row.status === 'sent' || row.status === 'draft') {
+      const amount = Number(row.total_paise || 0);
+      const paidOnStr = row.paid_on instanceof Date
+        ? row.paid_on.toISOString().slice(0, 10)
+        : String(row.paid_on || '');
+      const dueDateStr = row.due_date instanceof Date
+        ? row.due_date.toISOString().slice(0, 10)
+        : String(row.due_date || '');
+
+      if (row.status === 'sent' || row.status === 'viewed' || row.status === 'draft') {
         outstandingPaise += amount;
-        if (row.status === 'sent' && row.due_date && row.due_date < today) {
+        if (dueDateStr && dueDateStr < today) {
           overduePaise += amount;
         }
+      } else if (row.status === 'overdue') {
+        outstandingPaise += amount;
+        overduePaise += amount;
       } else if (row.status === 'paid') {
-        if (row.paid_on && row.paid_on.startsWith(currentYearMonth)) {
+        if (paidOnStr && paidOnStr.startsWith(currentYearMonth)) {
           paidMonthPaise += amount;
         }
       }
