@@ -11,12 +11,26 @@ const rl = readline.createInterface({
   terminal: false,
 });
 
+let buffer = '';
+
 rl.on('line', async (line) => {
   const trimmed = line.trim();
-  if (!trimmed) return;
+  if (!trimmed && !buffer) return;
+
+  buffer += line + '\n';
+
+  let payload;
+  try {
+    payload = JSON.parse(buffer.trim());
+  } catch (e) {
+    // Incomplete JSON payload across multiple lines, wait for next line
+    return;
+  }
+
+  // Clear buffer once complete JSON object is parsed
+  buffer = '';
 
   try {
-    const payload = JSON.parse(trimmed);
     const res = await fetch(mcpUrl, {
       method: 'POST',
       headers: {
@@ -63,3 +77,4 @@ rl.on('line', async (line) => {
     process.stdout.write(JSON.stringify(errRpc) + '\n');
   }
 });
+
