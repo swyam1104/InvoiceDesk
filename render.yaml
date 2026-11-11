@@ -1,0 +1,25 @@
+# Render Blueprint specification for InvoiceDesk
+# 1-Click Zero-Fee Deployment on Render.com
+services:
+  - type: web
+    name: invoicedesk
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: BASE_URL
+        placeholder: https://invoicedesk.onrender.com
+        sync: false
+      - key: DATABASE_URL
+        placeholder: postgresql://user:password@host/database?sslmode=require
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
