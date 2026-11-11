@@ -30,6 +30,7 @@ import { renderPublicInvoice } from './views/public_invoice.js';
 import { renderSettingsView } from './views/settings.js';
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'invoicedesk_secret_key_development_only';
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
@@ -125,7 +126,10 @@ app.post('/login', async (req: Request, res: Response) => {
   }
 
   (req.session as any).userId = user.id;
-  res.redirect('/invoices');
+  req.session.save((err) => {
+    if (err) console.error('Session save error:', err);
+    res.redirect('/invoices');
+  });
 });
 
 app.get('/signup', (req: Request, res: Response) => {
@@ -193,7 +197,10 @@ app.post('/signup', async (req: Request, res: Response) => {
   (req.session as any).userId = userId;
   (req.session as any).newMcpToken = rawToken;
 
-  res.redirect('/settings?new_token=true');
+  req.session.save((err) => {
+    if (err) console.error('Session save error:', err);
+    res.redirect('/settings?new_token=true');
+  });
 });
 
 app.post('/logout', (req: Request, res: Response) => {
